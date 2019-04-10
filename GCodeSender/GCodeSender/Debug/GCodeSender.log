@@ -1,0 +1,3 @@
+﻿  GCodeSender.cpp
+c:\users\basem\desktop\arduinoproj\stepper motor\cnc_attempt1\gcodesender\gcodesender\gcodesender.cpp(28): warning C4101: 'data': unreferenced local variable
+  GCodeSender.vcxproj -> C:\Users\Basem\Desktop\ArduinoProj\Stepper Motor\CNC_Attempt1\GCodeSender\Debug\GCodeSender.exe

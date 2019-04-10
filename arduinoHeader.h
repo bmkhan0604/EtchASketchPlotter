@@ -3,11 +3,11 @@
 #define STEPS 2048 // Steps Per Rev  ... 360/Stride Angle * Gear Ratio... (360/5.625)*64
 
 void stringParse();
-String moveMotor();  //moves x and y pos
-
+void moveMotor();  //moves x and y pos
 Stepper stepperX(STEPS,12,10,11,13);
 Stepper stepperY(STEPS,4,2,3,5);
 
+const int resolution = 1;
 String instruction = "";         // a String to hold incoming data
 bool stringComplete = false;  // whether the string is complete
 float xpos = 0, ypos = 0;       // current pos of respective motors
@@ -21,7 +21,7 @@ void serialEvent()
   {
      c = Serial.read();
      instruction += c;
-     if ( c == '\n')
+     if ( c == '@')
         stringComplete = true;
   }
 }
@@ -29,7 +29,7 @@ void serialEvent()
 
 void stringParse()
 {
-  Serial.println("Entering String Processing");
+ // Serial.println("Entering String Processing");
   String xchar = "";
   String ychar = "";
   int i = 0;
@@ -69,13 +69,17 @@ void stringParse()
   return NULL;
 }
 
-String moveMotor()
+void moveMotor()
 {
   int dx,dy;
   // gets the change needed to move for each motor
   dx = xnew - xpos;       
   dy = ynew - ypos;  
-  Serial.println("Moving to X:" +String(dx)+" Y:" + String(dy));
+  ypos = ynew;
+  xpos = xnew;
+  if(dx == 0 & dy == 0)
+    delay(2000);
+    //Serial.println("Moving to X:" +String(xnew)+" Y:" + String(ynew));
   // 2 ways to accomplish.
   // 1. step speeds respectivly and move motors required steps
   // 2. move motors x axis the y axis, making a staircase
@@ -104,57 +108,96 @@ String moveMotor()
     stepperY.step(dy);
     return "Done";
   }
-//---------------------------------------------------------------------
+//---------------------------------------------------------------------1
   // type 2...
   // dy/dx = .5 then move x 2 times, then move y 1.... 
   // advantages... constant speed for x and y. 
   */
+  int slope;
   while(dx != 0 | dy != 0)
   {
     if(abs(dy) > abs(dx))
     {
        if(dx != 0)   // if not moving in a vertical line
        {
-          stepperY.step(dy/dx);
-          dy -= dy/dx;
-          if( dx > 0)
+          slope = dy/dx;
+          if (slope > 0  & dy > 0)    // slope "+"   dy "+"
+          {
+            dy -= slope;
+            stepperY.step(slope*resolution);
+          }
+          else if(slope > 0 & dy < 0)   // slope "+"  dy "-"
+          {
+            dy += slope;
+            stepperY.step(-slope*resolution);      
+          }
+          else if(slope < 0 & dy > 0)   // slope "-"   dy "+"
+          {
+            dy += slope; 
+            stepperY.step(-slope*resolution);    
+          }         
+          else                          // slope "-"  dy "-"
+          {
+            dy -= slope;
+            stepperY.step(slope*resolution);
+          }
+          if( dx > 0)   // x is pos
           {
             stepperX.step(1);
             dx -= 1;
           }
-          else 
+          else          // x is neg
           {
             stepperX.step(-1);
             dx += 1;
           }
-         }
-         else {
+       }
+       else {             // move in a vertical line
             stepperY.step(dy);
             dy = 0;
        }
     }
-    else 
+    else              // x is larger than y
     {
        if(dy != 0)   // if not moving in a vertical line
        {
-          stepperX.step(dx/dy);
-          dx -= dx/dy;
-          if( dy > 0)
+          slope = dx/dy;
+          if (slope > 0  & dx > 0)    // slope "+"   dx "+"
           {
-            stepperY.step(1);
+            dx -= slope;
+            stepperX.step(slope*resolution);
+          }
+          else if(slope > 0 & dx < 0)   // slope "+"  dx "-"
+          {
+            dx += slope;
+            stepperX.step(-slope*resolution);      
+          }
+          else if(slope < 0 & dx > 0)   // slope "-"   dx "+"
+          {
+            dx += slope; 
+            stepperX.step(-slope*resolution);    
+          }         
+          else                          // slope "-"  dx "-"
+          {
+            dx -= slope;
+            stepperX.step(slope*resolution);
+          }
+          if( dy > 0)               // y is pos
+          {
+            stepperY.step(resolution);
             dy -= 1;
           }
-          else 
+          else                      // y is neg
           {
-            stepperY.step(-1);
+            stepperY.step(-resolution);
             dy += 1;
           }
        }
-       else {
+       else {                 // moving in a vertical line
           stepperX.step(dx);
           dx = 0;
        }
     }
   }
-  return("Done");
+  return;
 }
